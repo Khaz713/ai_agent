@@ -9,9 +9,9 @@ def get_file_content(working_directory, file):
         return f'Error: File not found or is not a regular file: "{file_path}"'
     try:
         with open(file_path, 'r') as file:
-            file_content_string = file.read()
-            if MAX_CHARS < len(file_content_string):
-                file_content_string = f'{file_content_string[:MAX_CHARS]}\n [...File "{file_path}" truncated at 10000 characters]'
+            file_content_string = file.read(MAX_CHARS)
+            if MAX_CHARS < os.path.getsize(file_path):
+                file_content_string += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
 
             return file_content_string
     except Exception as e:
