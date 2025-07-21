@@ -10,14 +10,16 @@ def get_date_key():
 def get_log():
     with open('log.json', 'r', encoding='utf-8') as f:
         if os.path.getsize('log.json') == 0:
-            return {get_date_key(): []}
+            return {get_date_key(): {}}
         return json.load(f)
 
 
-def append_log(prompt, response, response_time):
+def append_log(prompt, response, conversation_start, response_time):
     log = get_log()
     with open('log.json', 'w', encoding='utf-8') as f:
-        log[get_date_key()].append({
+        if log[get_date_key()].get(conversation_start) is None:
+            log[get_date_key()][conversation_start] = []
+        log[get_date_key()][conversation_start].append({
             'prompt': prompt,
             'response': response.text,
             'prompt_tokens': response.usage_metadata.prompt_token_count,
@@ -28,6 +30,8 @@ def append_log(prompt, response, response_time):
 
 def get_used_prompt_tokens(log):
     used_prompt_tokens = 0
-    for prompt in log[get_date_key()]:
-        used_prompt_tokens += prompt['prompt_tokens']
+    date_key = get_date_key()
+    for conversation in log[date_key].keys():
+        for content in log[date_key][conversation]:
+            used_prompt_tokens += content['prompt_tokens'] + content['response_tokens']
     return used_prompt_tokens
