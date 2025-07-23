@@ -16,17 +16,24 @@ def get_log():
 
 def append_log(prompt, response, conversation_start, response_time):
     log = get_log()
+    response_text = ''
+    if response.function_calls:
+        for function_call_part in response.function_calls:
+            response_text += f"{function_call_part.name}({function_call_part.args})\n"
+    else:
+        response_text = response.text
+
     with open('log.json', 'w', encoding='utf-8') as f:
         if log[get_date_key()].get(conversation_start) is None:
             log[get_date_key()][conversation_start] = []
         log[get_date_key()][conversation_start].append({
             'prompt': prompt,
-            'response': response.text,
+            'response': response_text,
             'prompt_tokens': response.usage_metadata.prompt_token_count,
             'response_tokens': response.usage_metadata.candidates_token_count,
             'response_time': response_time
         })
-        json.dump(log, f, indent=4, ensure_ascii=False)
+        json.dump(log, f, indent=4, ensure_ascii=True)
 
 def get_used_prompt_tokens(log):
     used_prompt_tokens = 0

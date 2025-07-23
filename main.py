@@ -5,9 +5,9 @@ from google.genai import types
 import sys
 import time
 from datetime import datetime
-
-
+from call_function import available_functions
 from log import append_log, get_used_prompt_tokens, get_log
+from prompts import system_prompt
 
 
 def main():
@@ -16,15 +16,20 @@ def main():
         sys.exit(1)
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
+
     client = genai.Client(api_key=api_key)
     messages = [
         types.Content(role="user", parts=[types.Part(text=sys.argv[1])]),
     ]
+
     start = time.time()
     conversation_start = datetime.now().strftime("%d %H:%M:%S")
     response = client.models.generate_content(
         model="gemini-2.0-flash-001",
-        contents=messages)
+        contents=messages,
+        config=types.GenerateContentConfig(
+            tools=[available_functions], system_instruction=system_prompt)
+    )
     end = time.time()
     response_time = end - start
 
@@ -35,7 +40,11 @@ def main():
               f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
               f"Response tokens: {response.usage_metadata.candidates_token_count}\n"
               f"Tokens used this month: {tokens_used}\n")
-    print(f"Response:\n {response.text}")
+    if response.function_calls:
+        for function_call_part in response.function_calls:
+            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+    else:
+        print(f"Response:\n {response.text}")
 
 
 
