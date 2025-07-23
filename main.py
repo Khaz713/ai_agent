@@ -23,37 +23,49 @@ def main():
     messages = [
         types.Content(role="user", parts=[types.Part(text=sys.argv[1])]),
     ]
-
-    start = time.time()
     conversation_start = datetime.now().strftime("%d %H:%M:%S")
-    response = client.models.generate_content(
-        model="gemini-2.0-flash-001",
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt)
-    )
-    end = time.time()
-    response_time = end - start
+    loop = 20
+    while loop > 0:
+        try:
+            start = time.time()
+            response = client.models.generate_content(
+                model="gemini-2.0-flash-001",
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions], system_instruction=system_prompt)
+            )
+            end = time.time()
+            response_time = end - start
+            for candidate in response.candidates:
+                messages.append(candidate.content)
 
-    append_log(sys.argv[1], response, conversation_start, response_time)
-    tokens_used = get_used_prompt_tokens(get_log())
-    if verbose:
-        print(f"User prompt: {sys.argv[1]}\n"
-              f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
-              f"Response tokens: {response.usage_metadata.candidates_token_count}\n"
-              f"Tokens used this month: {tokens_used}\n")
-    if response.function_calls:
-        for function_call_part in response.function_calls:
-            function_call_result = call_function(function_call_part, verbose)
-            if not function_call_result.parts[0].function_response.response:
-                raise Exception("Function call failed")
+            append_log(sys.argv[1], response, conversation_start, response_time)
+            tokens_used = get_used_prompt_tokens(get_log())
             if verbose:
-                print(f"-> {function_call_result.parts[0].function_response.response}")
+                print(f"User prompt: {sys.argv[1]}\n"
+                      f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
+                      f"Response tokens: {response.usage_metadata.candidates_token_count}\n"
+                      f"Tokens used this month: {tokens_used}\n")
+            if response.function_calls:
+                function_responses = []
+                for function_call_part in response.function_calls:
+                    function_call_result = call_function(function_call_part, verbose)
+                    if not function_call_result.parts[0].function_response.response:
+                        raise Exception("Function call failed")
+                    if verbose:
+                        print(f"-> {function_call_result.parts[0].function_response.response}")
+                    function_responses.append(function_call_result.parts[0])
+                messages.append(types.Content(role="tool", parts=function_responses))
             else:
-                function_call_result = call_function(function_call_part, False)
+                print(f"Response:\n {response.text}")
+                print(f"Tokens used this month: {tokens_used}")
+                break
 
-    else:
-        print(f"Response:\n {response.text}")
+
+
+            loop -= 1
+        except Exception as e:
+            print(f"Exception: {e}")
 
 
 
