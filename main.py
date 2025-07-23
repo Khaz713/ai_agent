@@ -44,8 +44,7 @@ def main():
             if verbose:
                 print(f"User prompt: {sys.argv[1]}\n"
                       f"Prompt tokens: {response.usage_metadata.prompt_token_count}\n"
-                      f"Response tokens: {response.usage_metadata.candidates_token_count}\n"
-                      f"Tokens used this month: {tokens_used}\n")
+                      f"Response tokens: {response.usage_metadata.candidates_token_count}\n")
             if response.function_calls:
                 function_responses = []
                 for function_call_part in response.function_calls:
@@ -58,7 +57,7 @@ def main():
                 messages.append(types.Content(role="tool", parts=function_responses))
             else:
                 print(f"Response:\n {response.text}")
-                print(f"Tokens used this month: {tokens_used}")
+                print(f"Tokens used this month: {tokens_used}/2000000 {round((tokens_used/2000000)*100, 2)}%")
                 break
 
 
