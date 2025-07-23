@@ -20,7 +20,8 @@ def run_python_file(working_directory, filename, args=None):
             cwd=os.path.abspath(working_directory),
             capture_output=True,
             text=True,
-            timeout=30)
+            timeout=30
+        )
         output = ''
         if completed_process.stdout:
             output += f'STDOUT: {completed_process.stdout}\n'
@@ -28,7 +29,7 @@ def run_python_file(working_directory, filename, args=None):
             output += f'STDERR: {completed_process.stderr}\n'
         if completed_process.returncode != 0:
             output += f'Process exited with code {completed_process.returncode}\n'
-        if len(completed_process.stdout) == 0:
+        if len(completed_process.stdout) == 0 and len(completed_process.stderr) == 0:
             output = 'No output produced.'
         return output
     except Exception as e:
@@ -37,7 +38,7 @@ def run_python_file(working_directory, filename, args=None):
 
 schema_run_python_file = types.FunctionDeclaration(
     name="run_python_file",
-    description="Execute Python files with optional arguments",
+    description="Execute Python files with optional arguments. If there are no optional arguments provided run the program without them.",
     parameters=types.Schema(
         type=types.Type.OBJECT,
         properties={
@@ -47,7 +48,7 @@ schema_run_python_file = types.FunctionDeclaration(
             ),
             "args": types.Schema(
                 type=types.Type.STRING,
-                description="The arguments to pass to the Python interpreter.",
+                description="Optional arguments to pass to the Python interpreter.",
             )
         },
     ),
